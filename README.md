@@ -1,1 +1,1 @@
-# Pattern-Recognition
+# Pattern-Recognition Lab 2
