@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import pandas as pd
 
 
 # cd 'C:\\Users\\hadri\\Google Drive\\Acads\\CS 129.18\\OpenCV'
@@ -33,23 +34,30 @@ showImage('Canny', edges)
 contoured_image, contours, hierarchy = cv2.findContours(
     edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+ROI = pd.DataFrame(columns=['y', 'y1', 'x', 'x1'])
+counter = 0
+image_out = image.copy()
 # Draw rectangles enclosing contours in orig image
 for contour in contours:
     # get rectangle bounding contour
     [x, y, w, h] = cv2.boundingRect(contour)
 
     # discard areas that are too large
-    if h > image.shape[1] * 0.7 and w > image.shape[0] * 0.7:
-        continue
+    # if h > image.shape[1] * 0.7 and w > image.shape[0] * 0.7:
+    #     continue
 
-    # discard areas that are too small
+    # discard areas that are too small (5% of the size of image)
     if h < image.shape[1] * 0.05 or w < image.shape[0] * 0.05:
         continue
 
     # draw rectangle around contour on original image
-    cv2.rectangle(image, (x, y), (x + w, y + h), (255, 0, 255), 2)
-
-showImage('Bounded Rectangles', image)
+    crop_img = image[y:y + h, x:x + w]
+    ROI.loc[counter] = [y, y + h, x, x + h]
+    cv2.imwrite('ROI/' + str(counter) + '.jpg', crop_img)
+    cv2.rectangle(image_out, (x, y), (x + w, y + h), (255, 0, 255), 2)
+    counter += 1
+showImage('Bounded Rectangles', image_out)
+ROI.to_csv('ROI_coords.csv', index=False)
 
 # have not implemented 1 e and f though i think not needed
-
+# C++ specifics kasi
