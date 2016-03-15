@@ -21,7 +21,10 @@ def auto_canny(image, sigma=0.33):
     # return the edged image
     return edged
 
-def ROI(edges):
+def ROI(image, gray, edges, ROI_dir, processed_dir):
+	ROI_features_fn = "ROI_features.csv"
+	ROI_coords_fn = "ROI_coords.csv"
+
 	contoured_image, contours, hierarchy = cv2.findContours(
 	    edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -62,7 +65,7 @@ def ROI(edges):
 	    # 0 gamma
 	    sobel = cv2.addWeighted(sobel_x, 0.5, sobel_y, 0.5, 0)
 	    # Resize to 8x8 image, flatten, and store to ROI_features
-	    sobel_flat = cv2.resize(sobel, (8, 8)).flatten()
+	    sobel_flat = cv2.resize(sobel, (8, 8)).flatten()/255 # normalized
 	    ROI_features.loc[counter] = sobel_flat
 	    # draw a box around contour on original image
 	    cv2.rectangle(image_out, (x, y), (x + w, y + h), (255, 0, 255), 2)
@@ -73,33 +76,37 @@ def ROI(edges):
 	ROI_features.to_csv(ROI_dir + ROI_subdir + ROI_features_fn, index=False)
 	return ROI_features
 
-## filenames
-ROI_coords_fn = "ROI_coords.csv"
-ROI_features_fn = "ROI_features.csv"
-
-## directories
-pictures_dir = "sample_pics/"
-ROI_dir = "ROI/"
-processed_dir = "processed/"
-
-if not os.path.exists(ROI_dir):
-	os.makedirs(ROI_dir)
-
-if not os.path.exists(processed_dir):
-	os.makedirs(processed_dir);
-
-for file in os.listdir(pictures_dir):
-	global img_fn
-	global ROI_subdir
-	img_fn = file
-	ROI_subdir = img_fn.split(".")[0] + "/"
-
-	if not os.path.exists(ROI_dir + ROI_subdir):
-		os.makedirs(ROI_dir + ROI_subdir)
+def main():
+	## filenames
 	
-	image = cv2.imread(pictures_dir + img_fn)
-	gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-	blurred = cv2.GaussianBlur(gray, (5, 5), 0)  # Common use case of 5x5
-	edges = auto_canny(blurred)
-	cv2.imwrite(processed_dir + "canny_" + img_fn, edges)
-	roi = ROI(edges)
+	
+
+	## directories
+	pictures_dir = "sample_pics/"
+	ROI_dir = "ROI/"
+	processed_dir = "processed/"
+
+	if not os.path.exists(ROI_dir):
+		os.makedirs(ROI_dir)
+
+	if not os.path.exists(processed_dir):
+		os.makedirs(processed_dir);
+
+	for file in os.listdir(pictures_dir):
+		global img_fn
+		global ROI_subdir
+		img_fn = file
+		ROI_subdir = img_fn.split(".")[0] + "/"
+
+		if not os.path.exists(ROI_dir + ROI_subdir):
+			os.makedirs(ROI_dir + ROI_subdir)
+		
+		image = cv2.imread(pictures_dir + img_fn)
+		gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+		blurred = cv2.GaussianBlur(gray, (5, 5), 0)  # Common use case of 5x5
+		edges = auto_canny(blurred)
+		cv2.imwrite(processed_dir + "canny_" + img_fn, edges)
+		roi = ROI(image, gray, edges, ROI_dir, processed_dir)
+
+if __name__ == '__main__':
+	main()
