@@ -4,6 +4,7 @@ import os
 import json
 import math
 
+
 def showImage(winName, image):
     cv2.imshow(winName, image)
     cv2.waitKey(0)
@@ -52,7 +53,7 @@ def predict(summaries, inputVector):
     return bestLabel
 
 
-def ROI(image, gray, edges):
+def ROI(image, gray, edges, ROI_dir, processed_dir, predicted_dir, ROI_subdir, img_fn):
     contoured_image, contours, hierarchy = cv2.findContours(
         edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -84,7 +85,7 @@ def ROI(image, gray, edges):
         # 0 gamma
         sobel = cv2.addWeighted(sobel_x, 0.5, sobel_y, 0.5, 0)
         # Resize to 8x8 image, flatten, and store to ROI_features
-        sobel_flat = cv2.resize(sobel, (8, 8)).flatten()/255
+        sobel_flat = cv2.resize(sobel, (8, 8)).flatten() / 255
 
         with open('classifier/train_summary.json', 'r') as f:
             train_summary = json.loads(f.read())
@@ -96,7 +97,7 @@ def ROI(image, gray, edges):
         # ROI_features.loc[counter] = sobel_flat
         # draw a box around contour on original image
 
-    cv2.imwrite("nb_" + 'lol.jpeg', image_out)
+    cv2.imwrite(predicted_dir + img_fn, image_out)
 
 
 def main():
@@ -105,6 +106,7 @@ def main():
     pictures_dir = "sample_pics/"
     ROI_dir = "ROI/"
     processed_dir = "processed/"
+    predicted_dir = "predicted/"
 
     if not os.path.exists(ROI_dir):
         os.makedirs(ROI_dir)
@@ -112,12 +114,23 @@ def main():
     if not os.path.exists(processed_dir):
         os.makedirs(processed_dir)
 
-    img_fn = "/home/jerelynco/Documents/Acads/2 Sem/CS129.18/Pattern-Recognition/lab2/test_pics/webcam1.jpg"
-    image = cv2.imread(img_fn)
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)  # Common use case of 5x5
-    edges = auto_canny(blurred)
-    ROI(image, gray, edges)
+    if not os.path.exists(predicted_dir):
+        os.makedirs(predicted_dir)
+
+    for file in os.listdir(pictures_dir):
+        global img_fn
+        global ROI_subdir
+        img_fn = file
+        ROI_subdir = img_fn.split(".")[0] + "/"
+
+        if not os.path.exists(ROI_dir + ROI_subdir):
+            os.makedirs(ROI_dir + ROI_subdir)
+
+        image = cv2.imread(pictures_dir + img_fn)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)  # Common use case of 5x5
+        edges = auto_canny(blurred)
+        ROI(image, gray, edges, ROI_dir, processed_dir, predicted_dir, ROI_subdir, img_fn)
 
 if __name__ == '__main__':
     main()
