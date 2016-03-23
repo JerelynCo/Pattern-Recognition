@@ -92,7 +92,7 @@ def ROI(image, sobel, edges, ROI_dir, processed_dir, predicted_dir, ROI_subdir, 
 def main():
 
     # directories
-    pictures_dir = "sample_pics/"
+    pictures_dir = "test_pics/"
     ROI_dir = "ROI/"
     processed_dir = "processed/"
     predicted_dir = "predicted/"
