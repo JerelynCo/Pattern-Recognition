@@ -1,10 +1,10 @@
 import numpy as np
 import cv2
 import math
+import json
 
 
 def calculateProbability(x, mean, stdev):
-    print("Probability returned.")
     exponent = math.exp(-(math.pow(x - mean, 2) / (2 * math.pow(stdev, 2))))
     return (1 / (math.sqrt(2 * math.pi) * stdev)) * exponent
 
@@ -56,6 +56,13 @@ while(True):
     contoured_image, contours, hierarchy = cv2.findContours(
         edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+    # ddepth for sobel
+    ddepth = cv2.CV_8U
+
+    sobel_x = cv2.Sobel(blurred, ddepth, 1, 0)
+    sobel_y = cv2.Sobel(blurred, ddepth, 1, 0)
+    sobel = cv2.addWeighted(sobel_x, 0.5, sobel_y, 0.5, 0)
+
     counter = 0
     image_out = frame.copy()
 
@@ -65,12 +72,22 @@ while(True):
 
         if h < image_out.shape[1] * 0.05 or w < image_out.shape[0] * 0.05:
             continue
-        # draw a box around contour on original image
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 255), 2)
+
+        crop_img_sobel = sobel[y:y + h, x:x + w]
+
+        resized = cv2.resize(crop_img_sobel, (8, 8)).flatten() / 255
+
+        with open('classifier/train_summary.json', 'r') as f:
+            train_summary = json.loads(f.read())
+        if(predict(train_summary, resized) == '1'):
+            cv2.rectangle(edges, (x, y), (x + w, y + h), (255, 0, 0), 2)
+        else:
+            cv2.rectangle(edges, (x, y), (x + w, y + h), (0, 0, 255), 2)
+
         counter += 1
 
     # Display the resulting frame
-    cv2.imshow('frame', frame)
+    cv2.imshow('frame', edges)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
