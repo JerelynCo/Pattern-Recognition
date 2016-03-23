@@ -53,14 +53,11 @@ def predict(summaries, inputVector):
     return bestLabel
 
 
-def ROI(image, gray, edges, ROI_dir, processed_dir, predicted_dir, ROI_subdir, img_fn):
+def ROI(image, sobel, edges, ROI_dir, processed_dir, predicted_dir, ROI_subdir, img_fn):
     contoured_image, contours, hierarchy = cv2.findContours(
         edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     image_out = image.copy()
-
-    # ddepth for sobel
-    ddepth = cv2.CV_8U
 
     # Draw bounding boxes enclosing contours in orig image
     for contour in contours:
@@ -75,17 +72,9 @@ def ROI(image, gray, edges, ROI_dir, processed_dir, predicted_dir, ROI_subdir, i
         if h < image.shape[1] * 0.08 or w < image.shape[0] * 0.08:
             continue
 
-        crop_img_gray = gray[y:y + h, x:x + w]
+        crop_img_sobel = sobel[y:y + h, x:x + w]
 
-        # Doing BING -> http://mmcheng.net/bing/
-        # Do Sobel for x and y (set dx=1, dy=0, viceversa)
-        sobel_x = cv2.Sobel(crop_img_gray, ddepth, 1, 0)
-        sobel_y = cv2.Sobel(crop_img_gray, ddepth, 0, 1)
-        # merge sobel dx and dy images via cv2.addWeight with 0.5 alpha/beta,
-        # 0 gamma
-        sobel = cv2.addWeighted(sobel_x, 0.5, sobel_y, 0.5, 0)
-        # Resize to 8x8 image, flatten, and store to ROI_features
-        sobel_flat = cv2.resize(sobel, (8, 8)).flatten() / 255
+        sobel_flat = cv2.resize(crop_img_sobel, (8, 8)).flatten() / 255
 
         with open('classifier/train_summary.json', 'r') as f:
             train_summary = json.loads(f.read())
@@ -130,7 +119,17 @@ def main():
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         blurred = cv2.GaussianBlur(gray, (5, 5), 0)  # Common use case of 5x5
         edges = auto_canny(blurred)
-        ROI(image, gray, edges, ROI_dir, processed_dir, predicted_dir, ROI_subdir, img_fn)
+        # Doing BING -> http://mmcheng.net/bing/
+        # ddepth for sobel
+        ddepth = cv2.CV_8U
+        # Do Sobel for x and y (set dx=1, dy=0, viceversa)
+        sobel_x = cv2.Sobel(edges, ddepth, 1, 0)
+        sobel_y = cv2.Sobel(edges, ddepth, 0, 1)
+        # merge sobel dx and dy images via cv2.addWeight with 0.5 alpha/beta,
+        # 0 gamma
+        sobel = cv2.addWeighted(sobel_x, 0.5, sobel_y, 0.5, 0)
+        ROI(image, sobel, edges, ROI_dir, processed_dir,
+            predicted_dir, ROI_subdir, img_fn)
 
 if __name__ == '__main__':
     main()
