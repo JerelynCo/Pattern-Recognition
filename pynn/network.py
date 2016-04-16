@@ -1,5 +1,7 @@
-import numpy as np
 import random
+
+import numpy as np
+
 
 class Network:
     # Example topology is [3,5,1] with input having 3 neurons
@@ -42,7 +44,7 @@ class Network:
         for x, y in mini_batch:
             nabla_w = [np.zeros(w.shape) for w in self.weights]
             delta_nabla_w = self.backprop(x,y)
-            nabla_w = [nw + dnw for nw, dnw iin zip(nabla_w, delta_nabla_w)]
+            nabla_w = [nw + dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
         self.weights = [w-(eta/len(mini_batch))*nw for w,nw in zip(self.weights,nabla_w)]
 
     def evaluate(self, test_data):
@@ -57,13 +59,17 @@ class Network:
 
     @staticmethod
     def activation_prime(zeta):
+        return np.square(np.tanh(zeta)) + 1
+
+    @staticmethod
+    def activation_prime(zeta):
         return 1 / (np.cosh(zeta) ** 2)
 
     def feedforward(self, input_data):
         assert input_data.size == self.topology[
             0], "input size exceeds number of input nodes"
         self.zeta_layers = []
-        self.activations = [input_data]
+        self.activations_layer = []
         alpha = input_data
         for layer_weights in self.weights:
             zeta = np.dot(layer_weights, alpha)
@@ -76,14 +82,14 @@ class Network:
     def backprop(self, input_data, target):
         nabla_w = [np.zeros(w.shape) for w in self.weights]
         delta = self.cost_derivative(
-            self.activations_layer[-1], target) * self.activation_prime[self.zeta_layers[-1]]
-        nabla_w = np.dot(delta, self.activations_layer[-2].transpose())
+            self.activations_layer[-1], target) * self.activation_prime(self.zeta_layers[-1])
+        nabla_w = np.dot(delta, self.activations_layer[-1].transpose())
 
         for l in range(2, len(self.topology)):
             # From the second to the last layer backwards
             delta = np.dot(
-                self.weights[-l + 1].transpose, delta) * activation_prime(self.zeta_layers-l])
-            nabla_w = np.dot(delta, activations[-l-1].transpose())
+                self.weights[-l + 1].transpose(), delta) * self.activation_prime(self.zeta_layers[-l])
+            nabla_w = np.dot(delta, self.activations_layer[-l].transpose())
         return nabla_w
 
 
