@@ -60,14 +60,14 @@ class Network:
         delta = self.cost_derivative(
             self.activation_layers[-1], target) * self.activation_prime(
             self.zeta_layers[-1])
-        nabla_w[-1] = np.dot(delta, np.transpose(self.activation_layers[-1]))
+        nabla_w[-1] = np.dot(delta, np.transpose(self.activation_layers[-1])) # theoretically, should be self.activation_layers[-2] to match equation
 
         for l in range(2, len(self.topology)):
             # From the second to the last layer backwards
             delta = np.dot(np.transpose(
                 self.weights[-l + 1]), delta) * self.activation_prime(self.zeta_layers[-l])
             nabla_w[-l] = np.dot(
-                delta, np.transpose(self.activation_layers[-l]))
+                delta, np.transpose(self.activation_layers[-l])) # theoretically, should be self.activation_layers[-l-1]) to match equation
         return nabla_w
 
     def compute_cost(self, activation, target):
