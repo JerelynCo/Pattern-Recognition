@@ -23,7 +23,7 @@ class Network:
 
     @staticmethod
     def activation_prime(zeta):
-        return 1.0 / np.cosh(zeta)
+        return 1.0 / np.square(zeta)
 
 
     def feedforward(self, input_data):
@@ -40,15 +40,29 @@ class Network:
             self.alpha_layers.append(alpha)
         return alpha
 
-    def backprop(self, target):
-        input_data = self.alpha_layers[0]
-        self.delta_layers = []
+    def backprop(self, eta, target):
+        individual_delta_layers = []
+        delta_layers = []
         delta_nabla_weights = []
-        self.delta_layers.insert(0, self.cost_derivative(self.alpha_layers[-1], target) * self.activation_prime(
-            self.zeta_layers[-1]))
+
+        individual_delta_layers.insert(0, (self.cost_derivative(self.alpha_layers[-1], target) * self.activation_prime(
+            self.zeta_layers[-1])))
         for l in range(2, len(self.topology)):
-            self.delta_layers.insert(0, np.dot(self.weights[-l + 1].T, self.delta_layers[-l + 1]))
-        return self.delta_layers
+            individual_delta_layers.insert(0, np.dot(self.weights[-l + 1].T,
+                                                     individual_delta_layers[-l + 1]) * self.activation_prime(
+                self.zeta_layers[-l]))
+
+        counter = 0
+        for i in individual_delta_layers:
+            delta_layers.append(i.sum() / self.topology[counter])
+            counter += 1
+
+        delta_nabla_weights.insert(0, np.dot(delta_layers[-1], self.alpha_layers[-2]))
+        for l in range(2, len(self.topology)):
+            delta_nabla_weights.insert(0, np.dot(delta_layers[-l], self.alpha_layers[-l - 1]))
+
+        self.weights = [w - eta * nw for w, nw in zip(self.weights, delta_nabla_weights)]
+
         # for d, a in zip(self.delta_layers, self.alpha_layers):
         #     np.dot(a.T, d)
 
