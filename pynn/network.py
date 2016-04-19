@@ -30,7 +30,7 @@ class Network:
 
     @staticmethod
     def activation_prime(zeta):
-        return 1 / (np.cosh(zeta) ** 2)
+        return 1 - np.pow(zeta, 2)
 
     def feedforward(self, input_data):
         assert input_data.size == self.topology[
@@ -63,7 +63,7 @@ class Network:
         nabla_w[-1] = np.dot(delta, np.transpose(self.activation_layers[-1])) # theoretically, should be self.activation_layers[-2] to match equation
 
         for l in range(2, len(self.topology)):
-            # From the second to the last layer backwards
+            # From the second to the first layer backwards
             delta = np.dot(np.transpose(
                 self.weights[-l + 1]), delta) * self.activation_prime(self.zeta_layers[-l])
             nabla_w[-l] = np.dot(
@@ -74,8 +74,8 @@ class Network:
         assert len(
             target) == self.topology[-1], "target size exceeds number of output nodes."
         target = np.array(target)
-        return np.sum(np.square(activation - target))
+        return np.sum(np.square(activation - target)) / 2
 
-    def cost_derivative(self, output_activations, target):
+    def cost_derivative(self, activation, target):
         # Partial derivatives for the output activations
-        return (output_activations - target)
+        return (target - activation)
